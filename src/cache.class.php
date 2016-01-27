@@ -118,8 +118,26 @@ class BinaryCache {
 		return null;
 	}
 
-	public function erase() {
+	public function erase($key) {
+		$key = sha1( $key );
 
+		if (isset($this->keys[$key])) {
+			$pos = $this->keys[$key][0];
+			$size = $this->keys[$key][1];
+			$pos_key = $this->keys[$key][2];
+
+			$fw = fopen( $this->data_file, 'r+b' );
+			fseek( $fw, $pos );
+			fwrite( $fw, str_repeat( "\1", $size ) );
+			fclose( $fw );
+
+			$fw = fopen( $this->keys_file, 'r+b' );
+			fseek( $fw, $pos_key );
+			fwrite( $fw, str_repeat( "\1", 40 + 1 + 10 + 1 + 10 ) );
+			fclose( $fw );
+
+			unset( $this->keys[$key] );
+		}
 	}
 
 	public function isCached( $key ) {
@@ -144,8 +162,8 @@ class BinaryCache {
 			$key_position = ftell( $fr );
 			$line = fgets( $fr );
 
-			if ( empty( $line ) ) {
-				break;
+			if ( empty( $line ) || $line[0] === "\1" ) {
+				continue;
 			}
 			# do same stuff with the $line
 			list( $key, $position, $size ) = explode( ' ', $line );
