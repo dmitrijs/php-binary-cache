@@ -6,7 +6,7 @@ class BinaryCache {
 	private $cacheName;
 
 	/** @var string */
-	private $cacheDir = '/cache/';
+	private $cacheDir = 'cache/';
 
 	/** @var string */
 	private $keys = array(); // sha1(key) -> position
@@ -14,13 +14,13 @@ class BinaryCache {
 	public function __construct( $cacheName = 'default' ) {
 		$this->cacheName = $cacheName;
 
-		$dir = __DIR__ . $this->cacheDir;
+		$dir = $this->cacheDir;
 		if ( !@mkdir( $dir ) && !is_dir( $dir ) ) {
 			throw new \Exception( 'Could not create directory for cache' );
 		}
 
-		$this->data_file = __DIR__ . $this->cacheDir . sha1( $this->cacheName ) . '.cache';
-		$this->keys_file = __DIR__ . $this->cacheDir . sha1( $this->cacheName ) . '.keys';
+		$this->data_file = $this->cacheDir . sha1( $this->cacheName ) . '.cache';
+		$this->keys_file = $this->cacheDir . sha1( $this->cacheName ) . '.keys';
 
 		if ( !is_file( $this->data_file ) ) {
 			touch( $this->data_file );
