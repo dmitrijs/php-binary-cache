@@ -15,11 +15,14 @@ class BinaryCacheTest extends \PHPUnit_Framework_TestCase {
 		$c->store('b', 'fgh'); // e9d71f5ee7c92d6dc9e92ffdad17b8bd49418f98
 
 		echo "data:\n";
-		echo "1234567890123456789012345678901234567890123456789012345678901234567890\n";
+		echo "01234567890123456789012345678901234567890123456789012345678901234567890\n";
 		echo $this->dump(__DIR__ . '/../src/cache/7505d64a54e061b7acd54ccd58b49dc43500b635.cache');
 
 		echo "\nkeys:\n";
 		echo $this->dump(__DIR__ . '/../src/cache/7505d64a54e061b7acd54ccd58b49dc43500b635.keys');
+
+		var_dump($c->retrieve('a'));
+		var_dump($c->retrieve('b'));
 	}
 
 	private function dump($file) {

@@ -101,8 +101,21 @@ class BinaryCache {
 		}
 	}
 
-	public function retrieve() {
+	public function retrieve($key) {
+		$key = sha1( $key );
 
+		if ( isset( $this->keys[$key] ) ) {
+			$pos = $this->keys[$key][0];
+			$size = $this->keys[$key][1];
+
+			$fr = fopen( $this->data_file, 'rb' );
+			fseek( $fr, $pos );
+			$data = fread( $fr, $size );
+			fclose( $fr );
+
+			return unserialize( $data );
+		}
+		return null;
 	}
 
 	public function erase() {
