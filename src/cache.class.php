@@ -8,7 +8,7 @@ class BinaryCache {
 	/** @var string */
 	private $cacheDir = 'cache/';
 
-	/** @var string */
+	/** @var array */
 	private $keys = array(); // sha1(key) -> position
 
 	public function __construct( $cacheName = 'default' ) {
@@ -153,6 +153,53 @@ class BinaryCache {
 		}
 
 		return false;
+	}
+
+	public function showFragmentationInfo( ) {
+		$keysAsc = array();
+		$minPos = 0;
+		$maxPos = 0;
+		foreach ($this->keys as $key) {
+			$pos = $key[0];
+			$size = $key[1];
+
+			$keysAsc[$pos] = $pos + $size;
+			$maxPos = max($maxPos, $pos + $size);
+		}
+
+		$did_something = true;
+		while ($did_something) {
+			$did_something = false;
+
+			$keys = array_keys($keysAsc);
+			foreach ($keys as $key) {
+				if (isset($keysAsc[$key])) {
+					$value = $keysAsc[$key];
+					if ( isset( $keysAsc[$value] ) ) {
+						$keysAsc[$key] = $keysAsc[$value];
+						unset( $keysAsc[$value] );
+						$did_something = true;
+					}
+				}
+			}
+		}
+
+		ksort($keysAsc);
+
+		{
+			$pos = 0;
+			$gaps = 0;
+			foreach ( $keysAsc as $key => $val ) {
+				if ( $key > $pos ) {
+					$gaps += $key - $pos;
+				}
+				$pos = $val;
+			}
+			if ( $pos < $maxPos ) {
+				$gaps += $maxPos - $pos;
+			}
+			echo 'Unused space in cache file: ' . round($gaps / ($maxPos - $minPos) * 100, 2) . '% (' . round( $gaps / 1024) . ' KB' . ")\n";
+		}
 	}
 
 	/////////////
