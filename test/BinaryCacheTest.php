@@ -98,6 +98,19 @@ class BinaryCacheTest extends \PHPUnit_Framework_TestCase {
 		$this->assertEquals( $keys_size, filesize( __DIR__ . '/../src/cache/7505d64a54e061b7acd54ccd58b49dc43500b635.keys' ) );
 	}
 
+	public function testBigMultilineData() {
+		file_put_contents( __DIR__ . '/../src/cache/7505d64a54e061b7acd54ccd58b49dc43500b635.cache', '' );
+		file_put_contents( __DIR__ . '/../src/cache/7505d64a54e061b7acd54ccd58b49dc43500b635.keys', '' );
+
+		{
+			$c = new BinaryCache();
+			$c->store( 'a', 'утф8 тест' ); // 86f7e437faa5a7fce15d1ddcb9eaeaea377667b8
+		}
+		{
+			$c2 = new BinaryCache();
+			$this->assertEquals('утф8 тест', $c2->retrieve('a'));
+		}
+	}
 
 	private function dumpCacheFiles($key = 'default') {
 		$key = sha1($key);

@@ -36,7 +36,7 @@ class BinaryCache {
 		$key = sha1( $key );
 		$data = serialize( $data );
 
-		$new_size = mb_strlen( $data );
+		$new_size = strlen( $data );
 		$new_time = time();
 
 		if ( isset( $this->keys[$key] ) ) {
