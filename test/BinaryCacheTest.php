@@ -8,25 +8,70 @@ class BinaryCacheTest extends \PHPUnit_Framework_TestCase {
 		file_put_contents( __DIR__ . '/../src/cache/7505d64a54e061b7acd54ccd58b49dc43500b635.cache', '' );
 		file_put_contents( __DIR__ . '/../src/cache/7505d64a54e061b7acd54ccd58b49dc43500b635.keys', '' );
 
-		$c = new BinaryCache();
+		{
+			$c = new BinaryCache();
 
-		$c->store( 'a', 'aaa' ); // 86f7e437faa5a7fce15d1ddcb9eaeaea377667b8
-		$c->store( 'b', 'bbb' ); // 86f7e437faa5a7fce15d1ddcb9eaeaea377667b8
-		$c->store( 'c', 'ccc' ); // 86f7e437faa5a7fce15d1ddcb9eaeaea377667b8
+			$c->store( 'a', 'aaa' ); // 86f7e437faa5a7fce15d1ddcb9eaeaea377667b8
+			$c->store( 'b', 'bbb' ); // 86f7e437faa5a7fce15d1ddcb9eaeaea377667b8
+			$c->store( 'c', 'ccc' ); // 86f7e437faa5a7fce15d1ddcb9eaeaea377667b8
 
-		$this->assertEquals( 'aaa', $c->retrieve( 'a' ) );
-		$c->store( 'b', 'bbb2' ); // 86f7e437faa5a7fce15d1ddcb9eaeaea377667b8
+			$this->assertEquals( 'aaa', $c->retrieve( 'a' ) );
+			$c->store( 'b', 'bbb2' ); // 86f7e437faa5a7fce15d1ddcb9eaeaea377667b8
 
-		$this->assertEquals( 'aaa', $c->retrieve( 'a' ) );
-		$this->assertEquals( 'bbb2', $c->retrieve( 'b' ) );
+			$this->assertEquals( 'aaa', $c->retrieve( 'a' ) );
+			$this->assertEquals( 'bbb2', $c->retrieve( 'b' ) );
 
-		$this->assertTrue( $c->isCached( 'b' ) );
-		$c->erase('b');
-		$this->assertEquals( null, $c->retrieve( 'b' ) );
-		$this->assertFalse( $c->isCached( 'b' ) );
+			$this->assertTrue( $c->isCached( 'b' ) );
+			$c->erase( 'b' );
+			$this->assertEquals( null, $c->retrieve( 'b' ) );
+			$this->assertFalse( $c->isCached( 'b' ) );
 
-		$this->assertEquals( 'aaa', $c->retrieve( 'a' ) );
-		$this->assertEquals( 'ccc', $c->retrieve( 'c' ) );
+			$this->assertEquals( 'aaa', $c->retrieve( 'a' ) );
+			$this->assertEquals( 'ccc', $c->retrieve( 'c' ) );
+		}
+
+		{
+			$c2 = new BinaryCache();
+
+			$this->assertFalse( $c->isCached( 'b' ) );
+			$this->assertEquals( 'aaa', $c2->retrieve( 'a' ) );
+			$this->assertEquals( 'ccc', $c2->retrieve( 'c' ) );
+		}
+	}
+
+	public function testMaxAgeInSeconds() {
+		file_put_contents( __DIR__ . '/../src/cache/7505d64a54e061b7acd54ccd58b49dc43500b635.cache', '' );
+		file_put_contents( __DIR__ . '/../src/cache/7505d64a54e061b7acd54ccd58b49dc43500b635.keys', '' );
+
+		{
+			$c = new BinaryCache();
+
+			$c->store( 'a', 'aaa' ); // 86f7e437faa5a7fce15d1ddcb9eaeaea377667b8
+
+			$this->assertEquals( 'aaa', $c->retrieve( 'a' ) );
+			$this->assertTrue( $c->isCached( 'a' ) );
+
+			sleep( 2 );
+
+			$this->assertEquals( 'aaa', $c->retrieve( 'a' ) );
+			$this->assertTrue( $c->isCached( 'a' ) );
+
+			$this->assertEquals( null, $c->retrieve( 'a', 1 ) );
+			$this->assertFalse( $c->isCached( 'a', 1 ) );
+
+			$this->assertEquals( 'aaa', $c->retrieve( 'a', 10 ) );
+			$this->assertTrue( $c->isCached( 'a' ), 10 );
+		}
+
+		{
+			$c2 = new BinaryCache();
+
+			$this->assertEquals( null, $c2->retrieve( 'a', 1 ) );
+			$this->assertFalse( $c2->isCached('a', 1) );
+
+			$this->assertEquals( 'aaa', $c2->retrieve( 'a', 10 ) );
+			$this->assertTrue( $c2->isCached('a'), 10 );
+		}
 	}
 
 	public function testOverwriteData() {

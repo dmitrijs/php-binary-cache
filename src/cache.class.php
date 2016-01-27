@@ -37,6 +37,7 @@ class BinaryCache {
 		$data = serialize( $data );
 
 		$new_size = mb_strlen( $data );
+		$new_time = time();
 
 		if ( isset( $this->keys[$key] ) ) {
 			$pos = $this->keys[$key][0];
@@ -56,10 +57,10 @@ class BinaryCache {
 
 				$fw = fopen( $this->keys_file, 'r+b' );
 				fseek( $fw, $pos_key );
-				fwrite( $fw, $key . ' ' . $this->padded_to_10_chars( $pos ) . ' ' . $this->padded_to_10_chars( $new_size ) );
+				fwrite( $fw, $key . ' ' . $this->padded_to_10_chars( $pos ) . ' ' . $this->padded_to_10_chars( $new_size ) . ' ' . $this->padded_to_10_chars( $new_time ) );
 				fclose( $fw );
 
-				$this->keys[$key] = array( $pos, $new_size, $pos_key );
+				$this->keys[$key] = array( $pos, $new_size, $pos_key, $new_time );
 			} else {
 				// overwrite old key
 				// empty old data
@@ -79,10 +80,10 @@ class BinaryCache {
 
 				$fw = fopen( $this->keys_file, 'r+b' );
 				fseek( $fw, $pos_key );
-				fwrite( $fw, $key . ' ' . $this->padded_to_10_chars( $new_pos ) . ' ' . $this->padded_to_10_chars( $new_size ) );
+				fwrite( $fw, $key . ' ' . $this->padded_to_10_chars( $new_pos ) . ' ' . $this->padded_to_10_chars( $new_size ) . ' ' . $this->padded_to_10_chars( $new_time ) );
 				fclose( $fw );
 
-				$this->keys[$key] = array( $new_pos, $new_size, $pos_key );
+				$this->keys[$key] = array( $new_pos, $new_size, $pos_key, $new_time );
 			}
 		} else {
 			$fw = fopen( $this->data_file, 'r+b' );
@@ -94,19 +95,19 @@ class BinaryCache {
 			$fw = fopen( $this->keys_file, 'r+b' );
 			fseek( $fw, 0, SEEK_END );
 			$pos_key = ftell( $fw );
-			fwrite( $fw, $key . ' ' . $this->padded_to_10_chars( $pos ) . ' ' . $this->padded_to_10_chars( $new_size ) . "\n" );
+			fwrite( $fw, $key . ' ' . $this->padded_to_10_chars( $pos ) . ' ' . $this->padded_to_10_chars( $new_size ) . ' ' . $this->padded_to_10_chars( time() ) . "\n" );
 			fclose( $fw );
 
-			$this->keys[$key] = array( $pos, $new_size, $pos_key );
+			$this->keys[$key] = array( $pos, $new_size, $pos_key, $new_time );
 		}
 	}
 
-	public function retrieve( $key ) {
-		$key = sha1( $key );
+	public function retrieve( $key, $maxAgeInSeconds = - 1 ) {
+		$hash = sha1( $key );
 
-		if ( isset( $this->keys[$key] ) ) {
-			$pos = $this->keys[$key][0];
-			$size = $this->keys[$key][1];
+		if ( $this->isCached( $key, $maxAgeInSeconds ) ) {
+			$pos = $this->keys[$hash][0];
+			$size = $this->keys[$hash][1];
 
 			$fr = fopen( $this->data_file, 'rb' );
 			fseek( $fr, $pos );
@@ -118,10 +119,10 @@ class BinaryCache {
 		return null;
 	}
 
-	public function erase($key) {
+	public function erase( $key ) {
 		$key = sha1( $key );
 
-		if (isset($this->keys[$key])) {
+		if ( isset( $this->keys[$key] ) ) {
 			$pos = $this->keys[$key][0];
 			$size = $this->keys[$key][1];
 			$pos_key = $this->keys[$key][2];
@@ -133,23 +134,31 @@ class BinaryCache {
 
 			$fw = fopen( $this->keys_file, 'r+b' );
 			fseek( $fw, $pos_key );
-			fwrite( $fw, str_repeat( "\0", 40 + 1 + 10 + 1 + 10 ) );
+			fwrite( $fw, str_repeat( "\0", 40 + 1 + 10 + 1 + 10 + 1 + 10 ) );
 			fclose( $fw );
 
 			unset( $this->keys[$key] );
 		}
 	}
 
-	public function isCached( $key ) {
+	public function isCached( $key, $maxAgeInSeconds = - 1 ) {
 		$key = sha1( $key );
 
-		return isset( $this->keys[$key] );
+		if ( isset( $this->keys[$key] ) ) {
+			$timePassed = time() - $this->keys[$key][3];
+			if ( $maxAgeInSeconds >= 0 && $timePassed > $maxAgeInSeconds ) {
+				return false;
+			}
+			return true;
+		}
+
+		return false;
 	}
 
 	/////////////
 
 	private function padded_to_10_chars( $x ) {
-		return str_pad( $x, 10 );
+		return str_pad( $x, 10, "\0" );
 	}
 
 	private function initKeysFromFile() {
@@ -162,8 +171,8 @@ class BinaryCache {
 				continue;
 			}
 			# do same stuff with the $line
-			list( $key, $position, $size ) = explode( ' ', $line );
-			$this->keys[$key] = array( 0 + $position, 0 + $size, 0 + $key_position );
+			list( $key, $position, $size, $time ) = explode( ' ', $line );
+			$this->keys[$key] = array( 0 + (int)trim( $position ), 0 + (int)trim( $size ), 0 + $key_position, 0 + (int)trim( $time ) );
 		}
 		fclose( $fr );
 	}
