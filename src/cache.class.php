@@ -101,7 +101,7 @@ class BinaryCache {
 		}
 	}
 
-	public function retrieve($key) {
+	public function retrieve( $key ) {
 		$key = sha1( $key );
 
 		if ( isset( $this->keys[$key] ) ) {
@@ -120,6 +120,12 @@ class BinaryCache {
 
 	public function erase() {
 
+	}
+
+	public function isCached( $key ) {
+		$key = sha1( $key );
+
+		return isset( $this->keys[$key] );
 	}
 
 	public function debug_dumpKeys() {
