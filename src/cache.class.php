@@ -146,10 +146,6 @@ class BinaryCache {
 		return isset( $this->keys[$key] );
 	}
 
-	public function debug_dumpKeys() {
-		print_r( $this->keys );
-	}
-
 	/////////////
 
 	private function padded_to_10_chars( $x ) {
