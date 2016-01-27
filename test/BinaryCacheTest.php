@@ -32,7 +32,7 @@ class BinaryCacheTest extends \PHPUnit_Framework_TestCase {
 
 	private function dump( $file ) {
 		$s = file_get_contents( $file );
-		$s = str_replace( "\1", '_', $s );
+		$s = str_replace( "\0", '_', $s );
 		return $s;
 	}
 }

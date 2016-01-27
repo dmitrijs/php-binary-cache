@@ -50,7 +50,7 @@ class BinaryCache {
 				fseek( $fw, $pos );
 				fwrite( $fw, $data );
 				if ( $size > $new_size ) {
-					fwrite( $fw, str_repeat( "\1", $size - $new_size ) );
+					fwrite( $fw, str_repeat( "\0", $size - $new_size ) );
 				}
 				fclose( $fw );
 
@@ -68,7 +68,7 @@ class BinaryCache {
 
 				$fw = fopen( $this->data_file, 'r+b' );
 				fseek( $fw, $pos );
-				fwrite( $fw, str_repeat( "\1", $size ) );
+				fwrite( $fw, str_repeat( "\0", $size ) );
 				fclose( $fw );
 
 				$fw = fopen( $this->data_file, 'r+b' );
@@ -128,12 +128,12 @@ class BinaryCache {
 
 			$fw = fopen( $this->data_file, 'r+b' );
 			fseek( $fw, $pos );
-			fwrite( $fw, str_repeat( "\1", $size ) );
+			fwrite( $fw, str_repeat( "\0", $size ) );
 			fclose( $fw );
 
 			$fw = fopen( $this->keys_file, 'r+b' );
 			fseek( $fw, $pos_key );
-			fwrite( $fw, str_repeat( "\1", 40 + 1 + 10 + 1 + 10 ) );
+			fwrite( $fw, str_repeat( "\0", 40 + 1 + 10 + 1 + 10 ) );
 			fclose( $fw );
 
 			unset( $this->keys[$key] );
@@ -162,7 +162,7 @@ class BinaryCache {
 			$key_position = ftell( $fr );
 			$line = fgets( $fr );
 
-			if ( empty( $line ) || $line[0] === "\1" ) {
+			if ( empty( $line ) || $line[0] === "\0" ) {
 				continue;
 			}
 			# do same stuff with the $line
