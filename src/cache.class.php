@@ -11,16 +11,19 @@ class BinaryCache {
 	/** @var array */
 	private $keys = array(); // sha1(key) -> position
 
-	public function __construct( $cacheName = 'default' ) {
+    private $zip;
+
+	public function __construct( $cacheName = 'default', $zip = false ) {
 		$this->cacheName = $cacheName;
+		$this->zip = $zip;
 
 		$dir = $this->cacheDir;
 		if ( !@mkdir( $dir ) && !is_dir( $dir ) ) {
 			throw new \Exception( 'Could not create directory for cache' );
 		}
 
-		$this->data_file = $this->cacheDir . sha1( $this->cacheName ) . '.cache';
-		$this->keys_file = $this->cacheDir . sha1( $this->cacheName ) . '.keys';
+		$this->data_file = $this->cacheDir . sha1( $this->cacheName ) . ($this->zip ? '.gz' : '') . '.cache';
+		$this->keys_file = $this->cacheDir . sha1( $this->cacheName ) . ($this->zip ? '.gz' : '') . '.keys';
 
 		if ( !is_file( $this->data_file ) ) {
 			touch( $this->data_file );
@@ -40,9 +43,7 @@ class BinaryCache {
 		$new_time = time();
 
 		if ( isset( $this->keys[$key] ) ) {
-			$pos = $this->keys[$key][0];
-			$size = $this->keys[$key][1];
-			$pos_key = $this->keys[$key][2];
+			list($pos, $size, $pos_key) = $this->keys[$key];
 
 			if ( $size >= $new_size ) {
 				// just overwrite
@@ -106,8 +107,7 @@ class BinaryCache {
 		$hash = sha1( $key );
 
 		if ( $this->isCached( $key, $maxAgeInSeconds ) ) {
-			$pos = $this->keys[$hash][0];
-			$size = $this->keys[$hash][1];
+		    list($pos, $size) = $this->keys[$hash];
 
 			$fr = fopen( $this->data_file, 'rb' );
 			fseek( $fr, $pos );
@@ -123,9 +123,7 @@ class BinaryCache {
 		$key = sha1( $key );
 
 		if ( isset( $this->keys[$key] ) ) {
-			$pos = $this->keys[$key][0];
-			$size = $this->keys[$key][1];
-			$pos_key = $this->keys[$key][2];
+            list($pos, $size, $pos_key) = $this->keys[$key];
 
 			$fw = fopen( $this->data_file, 'r+b' );
 			fseek( $fw, $pos );
@@ -159,10 +157,7 @@ class BinaryCache {
 		$keysAsc = array();
 		$minPos = 0;
 		$maxPos = 0;
-		foreach ($this->keys as $key) {
-			$pos = $key[0];
-			$size = $key[1];
-
+		foreach ($this->keys as list($pos, $size)) {
 			$keysAsc[$pos] = $pos + $size;
 			$maxPos = max($maxPos, $pos + $size);
 		}
