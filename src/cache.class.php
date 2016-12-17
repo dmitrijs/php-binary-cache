@@ -38,6 +38,9 @@ class BinaryCache {
 	public function store( $key, $data ) {
 		$key = sha1( $key );
 		$data = serialize( $data );
+		if ($this->zip) {
+		    $data = gzdeflate($data);
+        }
 
 		$new_size = strlen( $data );
 		$new_time = time();
@@ -114,6 +117,9 @@ class BinaryCache {
 			$data = fread( $fr, $size );
 			fclose( $fr );
 
+			if ($this->zip) {
+			    $data = gzinflate($data);
+            }
 			return unserialize( $data );
 		}
 		return null;
