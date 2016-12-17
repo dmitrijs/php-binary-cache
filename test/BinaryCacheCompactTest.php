@@ -2,7 +2,7 @@
 
 require_once __DIR__ . '/../src/cache.class.php';
 
-class BinaryCacheZippedTest extends \PHPUnit_Framework_TestCase {
+class BinaryCacheCompactTest extends \PHPUnit_Framework_TestCase {
 
 	public function testZipped() {
         file_put_contents( 'cache/7505d64a54e061b7acd54ccd58b49dc43500b635.cache', '' );

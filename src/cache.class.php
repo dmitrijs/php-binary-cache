@@ -11,19 +11,19 @@ class BinaryCache {
 	/** @var array */
 	private $keys = array(); // sha1(key) -> position
 
-    private $zip;
+    private $compact;
 
-	public function __construct( $cacheName = 'default', $zip = false ) {
+	public function __construct($cacheName = 'default', $compact = false ) {
 		$this->cacheName = $cacheName;
-		$this->zip = $zip;
+		$this->compact = $compact;
 
 		$dir = $this->cacheDir;
 		if ( !@mkdir( $dir ) && !is_dir( $dir ) ) {
 			throw new \Exception( 'Could not create directory for cache' );
 		}
 
-		$this->data_file = $this->cacheDir . sha1( $this->cacheName ) . ($this->zip ? '.gz' : '') . '.cache';
-		$this->keys_file = $this->cacheDir . sha1( $this->cacheName ) . ($this->zip ? '.gz' : '') . '.keys';
+		$this->data_file = $this->cacheDir . sha1( $this->cacheName ) . ($this->compact ? '.gz' : '') . '.cache';
+		$this->keys_file = $this->cacheDir . sha1( $this->cacheName ) . ($this->compact ? '.gz' : '') . '.keys';
 
 		if ( !is_file( $this->data_file ) ) {
 			touch( $this->data_file );
@@ -35,8 +35,8 @@ class BinaryCache {
 		$this->initKeysFromFile();
 	}
 
-	public function saveZipped() {
-        if ($this->zip) {
+	public function saveCompact() {
+        if ($this->compact) {
             // Already zipped
             return;
         }
@@ -52,7 +52,7 @@ class BinaryCache {
 	public function store( $key, $data ) {
         $hash = sha1( $key );
         $data = serialize( $data );
-        if ($this->zip) {
+        if ($this->compact) {
             $data = gzdeflate($data);
         }
 
@@ -138,7 +138,7 @@ class BinaryCache {
         $data = fread( $fr, $size );
         fclose( $fr );
 
-        if ($this->zip) {
+        if ($this->compact) {
             $data = gzinflate($data);
         }
         return unserialize( $data );

@@ -2,7 +2,7 @@
 
 require_once __DIR__ . '/../src/cache.class.php';
 
-class BinaryCacheSaveZippedTest extends \PHPUnit_Framework_TestCase {
+class BinaryCacheSaveCompactTest extends \PHPUnit_Framework_TestCase {
 
 	public function testSaveZipped() {
         file_put_contents( 'cache/7505d64a54e061b7acd54ccd58b49dc43500b635.cache', '' );
@@ -20,7 +20,7 @@ class BinaryCacheSaveZippedTest extends \PHPUnit_Framework_TestCase {
             $c->store( 'b', 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB' );
             $c->erase( 'a' );
 
-            $c->saveZipped();
+            $c->saveCompact();
         }
 
         {
