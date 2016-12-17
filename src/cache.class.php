@@ -11,7 +11,7 @@ class BinaryCache {
 	private $cacheName;
 
 	/** @var string */
-	private $cacheDir = 'cache/';
+    public static $cacheDir = 'cache/';
 
 	/** @var array */
 	private $keys = array(); // sha1(key) -> position
@@ -22,13 +22,13 @@ class BinaryCache {
 		$this->cacheName = $cacheName;
 		$this->compact = $compact;
 
-		$dir = $this->cacheDir;
+		$dir = self::$cacheDir;
 		if ( !@mkdir( $dir ) && !is_dir( $dir ) ) {
 			throw new \Exception( 'Could not create directory for cache' );
 		}
 
-		$this->data_file = $this->cacheDir . sha1( $this->cacheName ) . ($this->compact ? '.gz' : '') . '.cache';
-		$this->keys_file = $this->cacheDir . sha1( $this->cacheName ) . ($this->compact ? '.gz' : '') . '.keys';
+		$this->data_file = self::$cacheDir . sha1( $this->cacheName ) . ($this->compact ? '.gz' : '') . '.cache';
+		$this->keys_file = self::$cacheDir . sha1( $this->cacheName ) . ($this->compact ? '.gz' : '') . '.keys';
 
 		if ( !is_file( $this->data_file ) ) {
 			touch( $this->data_file );
@@ -228,7 +228,11 @@ class BinaryCache {
 			if ( $pos < $maxPos ) {
 				$gaps += $maxPos - $pos;
 			}
-			echo 'Unused space in cache file: ' . round($gaps / ($maxPos - $minPos) * 100, 2) . '% (' . round( $gaps / 1024) . ' KB' . ")\n";
+            if ( $maxPos - $minPos === 0 ) {
+                echo "Cache file is empty\n";
+            } else {
+                echo 'Unused space in cache file: ' . round( $gaps / ( $maxPos - $minPos ) * 100, 2 ) . '% (' . round( $gaps / 1024 ) . ' KB' . ")\n";
+            }
 		}
 	}
 
@@ -236,10 +240,6 @@ class BinaryCache {
 
 	private function padded_to_10_chars( $x ) {
 		return str_pad( $x, 10, "\0" );
-	}
-
-	private function padded( $x, $num ) {
-		return str_pad( $x, $num, "\0" );
 	}
 
 	private function packLong($long) {
