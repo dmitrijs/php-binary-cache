@@ -35,18 +35,35 @@ class BinaryCache {
 		$this->initKeysFromFile();
 	}
 
-	public function store( $key, $data ) {
-		$key = sha1( $key );
-		$data = serialize( $data );
-		if ($this->zip) {
-		    $data = gzdeflate($data);
+	public function saveZipped() {
+        if ($this->zip) {
+            // Already zipped
+            return;
         }
 
-		$new_size = strlen( $data );
-		$new_time = time();
+        $zippedCache = new BinaryCache($this->cacheName, true);
 
-		if ( isset( $this->keys[$key] ) ) {
-			list($pos, $size, $pos_key) = $this->keys[$key];
+        foreach ($this->keys as $hash => list($pos, $size, $pos_key, $timestamp)) {
+            $data = $this->retrieve_raw($hash);
+            $zippedCache->store_raw($hash, gzdeflate(serialize($data)), $timestamp);
+        }
+    }
+
+	public function store( $key, $data ) {
+        $hash = sha1( $key );
+        $data = serialize( $data );
+        if ($this->zip) {
+            $data = gzdeflate($data);
+        }
+
+        $this->store_raw($hash, $data, time());
+    }
+
+	public function store_raw( $hash, $data, $timestamp ) {
+        $new_size = strlen( $data );
+
+		if ( isset( $this->keys[$hash] ) ) {
+			list($pos, $size, $pos_key) = $this->keys[$hash];
 
 			if ( $size >= $new_size ) {
 				// just overwrite
@@ -61,10 +78,10 @@ class BinaryCache {
 
 				$fw = fopen( $this->keys_file, 'r+b' );
 				fseek( $fw, $pos_key );
-				fwrite( $fw, $key . ' ' . $this->padded_to_10_chars( $pos ) . ' ' . $this->padded_to_10_chars( $new_size ) . ' ' . $this->padded_to_10_chars( $new_time ) );
+				fwrite( $fw, $hash . ' ' . $this->padded_to_10_chars( $pos ) . ' ' . $this->padded_to_10_chars( $new_size ) . ' ' . $this->padded_to_10_chars( $timestamp ) );
 				fclose( $fw );
 
-				$this->keys[$key] = array( $pos, $new_size, $pos_key, $new_time );
+				$this->keys[$hash] = array( $pos, $new_size, $pos_key, $timestamp );
 			} else {
 				// overwrite old key
 				// empty old data
@@ -84,10 +101,10 @@ class BinaryCache {
 
 				$fw = fopen( $this->keys_file, 'r+b' );
 				fseek( $fw, $pos_key );
-				fwrite( $fw, $key . ' ' . $this->padded_to_10_chars( $new_pos ) . ' ' . $this->padded_to_10_chars( $new_size ) . ' ' . $this->padded_to_10_chars( $new_time ) );
+				fwrite( $fw, $hash . ' ' . $this->padded_to_10_chars( $new_pos ) . ' ' . $this->padded_to_10_chars( $new_size ) . ' ' . $this->padded_to_10_chars( $timestamp ) );
 				fclose( $fw );
 
-				$this->keys[$key] = array( $new_pos, $new_size, $pos_key, $new_time );
+				$this->keys[$hash] = array( $new_pos, $new_size, $pos_key, $timestamp );
 			}
 		} else {
 			$fw = fopen( $this->data_file, 'r+b' );
@@ -99,30 +116,32 @@ class BinaryCache {
 			$fw = fopen( $this->keys_file, 'r+b' );
 			fseek( $fw, 0, SEEK_END );
 			$pos_key = ftell( $fw );
-			fwrite( $fw, $key . ' ' . $this->padded_to_10_chars( $pos ) . ' ' . $this->padded_to_10_chars( $new_size ) . ' ' . $this->padded_to_10_chars( time() ) . "\n" );
+			fwrite( $fw, $hash . ' ' . $this->padded_to_10_chars( $pos ) . ' ' . $this->padded_to_10_chars( $new_size ) . ' ' . $this->padded_to_10_chars( time() ) . "\n" );
 			fclose( $fw );
 
-			$this->keys[$key] = array( $pos, $new_size, $pos_key, $new_time );
+			$this->keys[$hash] = array( $pos, $new_size, $pos_key, $timestamp );
 		}
 	}
 
 	public function retrieve( $key, $maxAgeInSeconds = - 1 ) {
-		$hash = sha1( $key );
-
 		if ( $this->isCached( $key, $maxAgeInSeconds ) ) {
-		    list($pos, $size) = $this->keys[$hash];
-
-			$fr = fopen( $this->data_file, 'rb' );
-			fseek( $fr, $pos );
-			$data = fread( $fr, $size );
-			fclose( $fr );
-
-			if ($this->zip) {
-			    $data = gzinflate($data);
-            }
-			return unserialize( $data );
+		    return $this->retrieve_raw(sha1( $key ));
 		}
 		return null;
+	}
+
+	private function retrieve_raw( $hash ) {
+        list($pos, $size) = $this->keys[$hash];
+
+        $fr = fopen( $this->data_file, 'rb' );
+        fseek( $fr, $pos );
+        $data = fread( $fr, $size );
+        fclose( $fr );
+
+        if ($this->zip) {
+            $data = gzinflate($data);
+        }
+        return unserialize( $data );
 	}
 
 	public function erase( $key ) {
