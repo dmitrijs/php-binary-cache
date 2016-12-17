@@ -1,5 +1,10 @@
 <?php
-
+/**
+ * Class BinaryCache
+ *
+ * v1.00 - First release
+ * v1.01 - Compact cache files (zipped data, binary keys)
+ */
 class BinaryCache {
 
 	/** @var string */
@@ -78,7 +83,7 @@ class BinaryCache {
 
 				$fw = fopen( $this->keys_file, 'r+b' );
 				fseek( $fw, $pos_key );
-				fwrite( $fw, $hash . ' ' . $this->padded_to_10_chars( $pos ) . ' ' . $this->padded_to_10_chars( $new_size ) . ' ' . $this->padded_to_10_chars( $timestamp ) );
+				fwrite( $fw, $this->packHash($hash) . ' ' . $this->packLong( $pos ) . ' ' . $this->packLong( $new_size ) . ' ' . $this->packLong( $timestamp ) );
 				fclose( $fw );
 
 				$this->keys[$hash] = array( $pos, $new_size, $pos_key, $timestamp );
@@ -101,7 +106,7 @@ class BinaryCache {
 
 				$fw = fopen( $this->keys_file, 'r+b' );
 				fseek( $fw, $pos_key );
-				fwrite( $fw, $hash . ' ' . $this->padded_to_10_chars( $new_pos ) . ' ' . $this->padded_to_10_chars( $new_size ) . ' ' . $this->padded_to_10_chars( $timestamp ) );
+				fwrite( $fw, $this->packHash($hash) . ' ' . $this->packLong( $new_pos ) . ' ' . $this->packLong( $new_size ) . ' ' . $this->packLong( $timestamp ) );
 				fclose( $fw );
 
 				$this->keys[$hash] = array( $new_pos, $new_size, $pos_key, $timestamp );
@@ -116,7 +121,7 @@ class BinaryCache {
 			$fw = fopen( $this->keys_file, 'r+b' );
 			fseek( $fw, 0, SEEK_END );
 			$pos_key = ftell( $fw );
-			fwrite( $fw, $hash . ' ' . $this->padded_to_10_chars( $pos ) . ' ' . $this->padded_to_10_chars( $new_size ) . ' ' . $this->padded_to_10_chars( time() ) . "\n" );
+			fwrite( $fw, $this->packHash($hash) . ' ' . $this->packLong( $pos ) . ' ' . $this->packLong( $new_size ) . ' ' . $this->packLong( time() ) . "\n" );
 			fclose( $fw );
 
 			$this->keys[$hash] = array( $pos, $new_size, $pos_key, $timestamp );
@@ -125,7 +130,8 @@ class BinaryCache {
 
 	public function retrieve( $key, $maxAgeInSeconds = - 1 ) {
 		if ( $this->isCached( $key, $maxAgeInSeconds ) ) {
-		    return $this->retrieve_raw(sha1( $key ));
+            $hash = sha1($key);
+            return $this->retrieve_raw($hash);
 		}
 		return null;
 	}
@@ -145,10 +151,10 @@ class BinaryCache {
 	}
 
 	public function erase( $key ) {
-		$key = sha1( $key );
+        $hash = sha1( $key );
 
-		if ( isset( $this->keys[$key] ) ) {
-            list($pos, $size, $pos_key) = $this->keys[$key];
+		if ( isset( $this->keys[$hash] ) ) {
+            list($pos, $size, $pos_key) = $this->keys[$hash];
 
 			$fw = fopen( $this->data_file, 'r+b' );
 			fseek( $fw, $pos );
@@ -157,18 +163,22 @@ class BinaryCache {
 
 			$fw = fopen( $this->keys_file, 'r+b' );
 			fseek( $fw, $pos_key );
-			fwrite( $fw, str_repeat( "\0", 40 + 1 + 10 + 1 + 10 + 1 + 10 ) );
+			if ($this->compact) {
+                fwrite( $fw, str_repeat( "\0", 20 + 1 + 4 + 1 + 4 + 1 + 4 ) );
+            } else {
+                fwrite($fw, str_repeat("\0", 40 + 1 + 10 + 1 + 10 + 1 + 10));
+            }
 			fclose( $fw );
 
-			unset( $this->keys[$key] );
+			unset( $this->keys[$hash] );
 		}
 	}
 
 	public function isCached( $key, $maxAgeInSeconds = - 1 ) {
-		$key = sha1( $key );
+        $hash = sha1( $key );
 
-		if ( isset( $this->keys[$key] ) ) {
-			$timePassed = time() - $this->keys[$key][3];
+		if ( isset( $this->keys[$hash] ) ) {
+			$timePassed = time() - $this->keys[$hash][3];
 			if ( $maxAgeInSeconds >= 0 && $timePassed > $maxAgeInSeconds ) {
 				return false;
 			}
@@ -228,18 +238,65 @@ class BinaryCache {
 		return str_pad( $x, 10, "\0" );
 	}
 
+	private function padded( $x, $num ) {
+		return str_pad( $x, $num, "\0" );
+	}
+
+	private function packLong($long) {
+	    if ($this->compact) {
+            return pack('V', $long);
+        }
+        return $this->padded_to_10_chars($long);
+    }
+
+    private function packHash($hash) {
+        if ($this->compact) {
+            return hex2bin($hash);
+        }
+        return $hash;
+    }
+
+	private function unpackLong($long_str) {
+	    if ($this->compact) {
+	        $unpacked = unpack('V', $long_str);
+            return reset($unpacked);
+        }
+        return 0 + (int)trim( $long_str );
+    }
+
 	private function initKeysFromFile() {
 		$fr = fopen( $this->keys_file, 'rb' );
 		while ( !feof( $fr ) ) {
 			$key_position = ftell( $fr );
-			$line = fgets( $fr );
+			if ($this->compact) {
 
-			if ( empty( $line ) || $line[0] === "\0" ) {
-				continue;
-			}
-			# do same stuff with the $line
-			list( $key, $position, $size, $time ) = explode( ' ', $line );
-			$this->keys[$key] = array( 0 + (int)trim( $position ), 0 + (int)trim( $size ), 0 + $key_position, 0 + (int)trim( $time ) );
+			    $line = fread($fr, 20 + 1 + 4 + 1 + 4 + 1 + 4 + 1);
+			    if (empty($line) || $line[0] === "\0") {
+			        continue;
+                }
+
+			    $hash = substr($line, 0, 20);
+                $position = substr($line, 20 + 1, 4);
+                $size = substr($line, 20 + 1 + 4 + 1, 4);
+                $time = substr($line, 20 + 1 + 4 + 1 + 4 + 1, 4);
+
+                $hash = bin2hex($hash);
+                $position = $this->unpackLong($position);
+                $size = $this->unpackLong($size);
+                $time = $this->unpackLong($time);
+
+                $this->keys[$hash] = array( $position, $size, 0 + $key_position, $time );
+
+            } else {
+                $line = fgets( $fr );
+
+                if ( empty( $line ) || $line[0] === "\0" ) {
+                    continue;
+                }
+                # do same stuff with the $line
+                list( $key, $position, $size, $time ) = explode( ' ', $line );
+                $this->keys[$key] = array( 0 + (int)trim( $position ), 0 + (int)trim( $size ), 0 + $key_position, 0 + (int)trim( $time ) );
+            }
 		}
 		fclose( $fr );
 	}
