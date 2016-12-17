@@ -10,6 +10,7 @@ class BinaryCacheTest extends \PHPUnit_Framework_TestCase {
 
 		{
 			$c = new BinaryCache();
+            $c->init();
 
 			$c->store( 'a', 'aaa' ); // 86f7e437faa5a7fce15d1ddcb9eaeaea377667b8
 			$c->store( 'b', 'bbb' ); // 86f7e437faa5a7fce15d1ddcb9eaeaea377667b8
@@ -32,6 +33,7 @@ class BinaryCacheTest extends \PHPUnit_Framework_TestCase {
 
 		{
 			$c2 = new BinaryCache();
+            $c2->init();
 
 			$this->assertFalse( $c->isCached( 'b' ) );
 			$this->assertEquals( 'aaa', $c2->retrieve( 'a' ) );
@@ -45,6 +47,7 @@ class BinaryCacheTest extends \PHPUnit_Framework_TestCase {
 
 		{
 			$c = new BinaryCache();
+            $c->init();
 
 			$c->store( 'a', 'aaa' ); // 86f7e437faa5a7fce15d1ddcb9eaeaea377667b8
 
@@ -65,6 +68,7 @@ class BinaryCacheTest extends \PHPUnit_Framework_TestCase {
 
 		{
 			$c2 = new BinaryCache();
+            $c2->init();
 
 			$this->assertEquals( null, $c2->retrieve( 'a', 1 ) );
 			$this->assertFalse( $c2->isCached('a', 1) );
@@ -79,6 +83,7 @@ class BinaryCacheTest extends \PHPUnit_Framework_TestCase {
 		file_put_contents( 'cache/7505d64a54e061b7acd54ccd58b49dc43500b635.keys', '' );
 
 		$c = new BinaryCache();
+        $c->init();
 		$c->store( 'a', 'very long data' ); // 86f7e437faa5a7fce15d1ddcb9eaeaea377667b8
 		$c->store( 'b', 'also long data' ); // e9d71f5ee7c92d6dc9e92ffdad17b8bd49418f98
 		$c->store( 'c', 'qwertyuiop' ); // e9d71f5ee7c92d6dc9e92ffdad17b8bd49418f98
@@ -104,10 +109,12 @@ class BinaryCacheTest extends \PHPUnit_Framework_TestCase {
 
 		{
 			$c = new BinaryCache();
+            $c->init();
 			$c->store( 'a', 'утф8 тест' ); // 86f7e437faa5a7fce15d1ddcb9eaeaea377667b8
 		}
 		{
 			$c2 = new BinaryCache();
+            $c2->init();
 			$this->assertEquals('утф8 тест', $c2->retrieve('a'));
 		}
 	}

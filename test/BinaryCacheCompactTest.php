@@ -10,6 +10,7 @@ class BinaryCacheCompactTest extends \PHPUnit_Framework_TestCase {
 
 		{
 			$c = new BinaryCache('default', true);
+			$c->init();
 
 			$c->store( 'a', 'aaa bbb ccc aaa bbb ccc aaa bbb ccc aaa bbb ccc aaa bbb ccc aaa bbb ccc' );
 			$c->store( 'b', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb' );
@@ -32,6 +33,7 @@ class BinaryCacheCompactTest extends \PHPUnit_Framework_TestCase {
 
 		{
 			$c2 = new BinaryCache('default', true);
+            $c2->init();
 
 			$this->assertFalse( $c->isCached( 'b' ) );
 			$this->assertEquals( 'aaa bbb ccc aaa bbb ccc aaa bbb ccc aaa bbb ccc aaa bbb ccc aaa bbb ccc', $c2->retrieve( 'a' ) );

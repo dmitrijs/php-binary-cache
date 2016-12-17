@@ -4,6 +4,7 @@
  *
  * v1.00 - First release
  * v1.01 - Compact cache files (zipped data, binary keys)
+ * v1.01a - Misc tweaks
  */
 class BinaryCache {
 
@@ -11,24 +12,28 @@ class BinaryCache {
 	private $cacheName;
 
 	/** @var string */
-    public static $cacheDir = 'cache/';
+    public $cacheDir = 'cache/';
 
 	/** @var array */
 	private $keys = array(); // sha1(key) -> position
 
     private $compact;
+    private $data_file;
+    private $keys_file;
 
 	public function __construct($cacheName = 'default', $compact = false ) {
 		$this->cacheName = $cacheName;
 		$this->compact = $compact;
+    }
 
-		$dir = self::$cacheDir;
+    public function init() {
+		$dir = $this->cacheDir;
 		if ( !@mkdir( $dir ) && !is_dir( $dir ) ) {
 			throw new \Exception( 'Could not create directory for cache' );
 		}
 
-		$this->data_file = self::$cacheDir . sha1( $this->cacheName ) . ($this->compact ? '.gz' : '') . '.cache';
-		$this->keys_file = self::$cacheDir . sha1( $this->cacheName ) . ($this->compact ? '.gz' : '') . '.keys';
+		$this->data_file = $this->cacheDir . sha1( $this->cacheName ) . ($this->compact ? '.gz' : '') . '.cache';
+		$this->keys_file = $this->cacheDir . sha1( $this->cacheName ) . ($this->compact ? '.gz' : '') . '.keys';
 
 		if ( !is_file( $this->data_file ) ) {
 			touch( $this->data_file );
@@ -47,6 +52,7 @@ class BinaryCache {
         }
 
         $zippedCache = new BinaryCache($this->cacheName, true);
+        $zippedCache->init();
 
         foreach ($this->keys as $hash => list($pos, $size, $pos_key, $timestamp)) {
             $data = $this->retrieve_raw($hash);
