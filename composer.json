@@ -1,0 +1,24 @@
+{
+  "name": "dmitrijs/php-binary-cache",
+  "type": "library",
+  "description": "Binary cache for PHP",
+  "keywords": [
+    "cache",
+    "binary cache"
+  ],
+  "homepage": "https://github.com/dmitrijs/php-binary-cache",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Dmitrijs Sadovskis",
+      "email": "sdo@inbox.lv",
+      "role": "Developer"
+    }
+  ],
+  "require": {
+    "php": ">=5.3.0"
+  },
+  "autoload": {
+    "psr-4": {"BinaryCache\\": "src/BinaryCache"}
+  }
+}

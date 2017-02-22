@@ -2,9 +2,9 @@
 /**
  * Class BinaryCache
  *
- * v1.00 - First release
- * v1.01 - Compact cache files (zipped data, binary keys)
- * v1.01a - Misc tweaks
+ * v1.0.0 - First release
+ * v1.1.0 - Compact cache files (zipped data, binary keys)
+ * v1.1.1 - Misc tweaks
  */
 class BinaryCache {
 
