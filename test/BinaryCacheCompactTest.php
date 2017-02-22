@@ -1,6 +1,8 @@
 <?php
 
-require_once __DIR__ . '/../src/cache.class.php';
+use BinaryCache\BinaryCache;
+
+require_once __DIR__ . '/../src/BinaryCache/BinaryCache.php';
 
 class BinaryCacheCompactTest extends \PHPUnit_Framework_TestCase {
 

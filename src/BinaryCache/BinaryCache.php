@@ -1,4 +1,7 @@
 <?php
+
+namespace BinaryCache;
+
 /**
  * Class BinaryCache
  *
