@@ -7,8 +7,8 @@ require_once __DIR__ . '/../src/BinaryCache/BinaryCache.php';
 class BinaryCacheTest extends \PHPUnit_Framework_TestCase {
 
 	public function testEverything() {
-		file_put_contents( 'cache/7505d64a54e061b7acd54ccd58b49dc43500b635.cache', '' );
-		file_put_contents( 'cache/7505d64a54e061b7acd54ccd58b49dc43500b635.keys', '' );
+		file_put_contents( 'cache/default.cache', '' );
+		file_put_contents( 'cache/default.keys', '' );
 
 		{
 			$c = new BinaryCache();
@@ -44,8 +44,8 @@ class BinaryCacheTest extends \PHPUnit_Framework_TestCase {
 	}
 
 	public function testMaxAgeInSeconds() {
-		file_put_contents( 'cache/7505d64a54e061b7acd54ccd58b49dc43500b635.cache', '' );
-		file_put_contents( 'cache/7505d64a54e061b7acd54ccd58b49dc43500b635.keys', '' );
+		file_put_contents( 'cache/default.cache', '' );
+		file_put_contents( 'cache/default.keys', '' );
 
 		{
 			$c = new BinaryCache();
@@ -81,8 +81,8 @@ class BinaryCacheTest extends \PHPUnit_Framework_TestCase {
 	}
 
 	public function testOverwriteData() {
-		file_put_contents( 'cache/7505d64a54e061b7acd54ccd58b49dc43500b635.cache', '' );
-		file_put_contents( 'cache/7505d64a54e061b7acd54ccd58b49dc43500b635.keys', '' );
+		file_put_contents( 'cache/default.cache', '' );
+		file_put_contents( 'cache/default.keys', '' );
 
 		$c = new BinaryCache();
         $c->init();
@@ -94,20 +94,20 @@ class BinaryCacheTest extends \PHPUnit_Framework_TestCase {
 		$this->assertEquals( 'also long data', $c->retrieve( 'b' ) );
 		$this->assertEquals( 'qwertyuiop', $c->retrieve( 'c' ) );
 
-		$data_size = filesize( 'cache/7505d64a54e061b7acd54ccd58b49dc43500b635.cache' );
-		$keys_size = filesize( 'cache/7505d64a54e061b7acd54ccd58b49dc43500b635.keys' );
+		$data_size = filesize( 'cache/default.cache' );
+		$keys_size = filesize( 'cache/default.keys' );
 
 		$c->store( 'a', 'smaller' ); // 86f7e437faa5a7fce15d1ddcb9eaeaea377667b8
 		$c->store( 'b', 'small' ); // e9d71f5ee7c92d6dc9e92ffdad17b8bd49418f98
 		$c->store( 'c', 'same size!' ); // e9d71f5ee7c92d6dc9e92ffdad17b8bd49418f98
 
-		$this->assertEquals( $data_size, filesize( 'cache/7505d64a54e061b7acd54ccd58b49dc43500b635.cache' ) );
-		$this->assertEquals( $keys_size, filesize( 'cache/7505d64a54e061b7acd54ccd58b49dc43500b635.keys' ) );
+		$this->assertEquals( $data_size, filesize( 'cache/default.cache' ) );
+		$this->assertEquals( $keys_size, filesize( 'cache/default.keys' ) );
 	}
 
 	public function testBigMultilineData() {
-		file_put_contents( 'cache/7505d64a54e061b7acd54ccd58b49dc43500b635.cache', '' );
-		file_put_contents( 'cache/7505d64a54e061b7acd54ccd58b49dc43500b635.keys', '' );
+		file_put_contents( 'cache/default.cache', '' );
+		file_put_contents( 'cache/default.keys', '' );
 
 		{
 			$c = new BinaryCache();
@@ -118,6 +118,22 @@ class BinaryCacheTest extends \PHPUnit_Framework_TestCase {
 			$c2 = new BinaryCache();
             $c2->init();
 			$this->assertEquals('утф8 тест', $c2->retrieve('a'));
+		}
+	}
+
+	public function testCacheNameEncoding() {
+		file_put_contents( 'cache/2e8308cd8340ad30de8150b4c6b4ef4f11ebb2a2.cache', '' );
+		file_put_contents( 'cache/2e8308cd8340ad30de8150b4c6b4ef4f11ebb2a2.keys', '' );
+
+		{
+			$c = new BinaryCache('~!@#$%^&*(){}:"<>?,./;\'[]`');
+            $c->init();
+			$c->store( 'weird', 'weird1' );
+		}
+		{
+			$c2 = new BinaryCache('~!@#$%^&*(){}:"<>?,./;\'[]`');
+            $c2->init();
+			$this->assertEquals('weird1', $c2->retrieve('weird'));
 		}
 	}
 

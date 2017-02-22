@@ -35,8 +35,13 @@ class BinaryCache {
 			throw new \Exception( 'Could not create directory for cache' );
 		}
 
-		$this->data_file = $this->cacheDir . sha1( $this->cacheName ) . ($this->compact ? '.gz' : '') . '.cache';
-		$this->keys_file = $this->cacheDir . sha1( $this->cacheName ) . ($this->compact ? '.gz' : '') . '.keys';
+        $cacheFileName = $this->cacheName;
+        if (!preg_match('#^[a-zA-Z0-9_-]*$#', $cacheFileName)) {
+            $cacheFileName = sha1($cacheFileName);
+        }
+
+		$this->data_file = $this->cacheDir . $cacheFileName . ($this->compact ? '.gz' : '') . '.cache';
+		$this->keys_file = $this->cacheDir . $cacheFileName . ($this->compact ? '.gz' : '') . '.keys';
 
 		if ( !is_file( $this->data_file ) ) {
 			touch( $this->data_file );

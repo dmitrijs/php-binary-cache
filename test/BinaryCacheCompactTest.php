@@ -7,8 +7,8 @@ require_once __DIR__ . '/../src/BinaryCache/BinaryCache.php';
 class BinaryCacheCompactTest extends \PHPUnit_Framework_TestCase {
 
 	public function testZipped() {
-        file_put_contents( 'cache/7505d64a54e061b7acd54ccd58b49dc43500b635.gz.cache', '' );
-        file_put_contents( 'cache/7505d64a54e061b7acd54ccd58b49dc43500b635.gz.keys', '' );
+        file_put_contents( 'cache/default.gz.cache', '' );
+        file_put_contents( 'cache/default.gz.keys', '' );
 
 		{
 			$c = new BinaryCache('default', true);
