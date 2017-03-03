@@ -2,13 +2,6 @@
 
 namespace BinaryCache;
 
-/**
- * Class BinaryCache
- *
- * v1.0.0 - First release
- * v1.1.0 - Compact cache files (zipped data, binary keys)
- * v1.1.1 - Misc tweaks
- */
 class BinaryCache {
 
 	/** @var string */
@@ -202,52 +195,25 @@ class BinaryCache {
 		return false;
 	}
 
-	public function showFragmentationInfo( ) {
-		$keysAsc = array();
-		$minPos = 0;
-		$maxPos = 0;
-		foreach ($this->keys as list($pos, $size)) {
-			$keysAsc[$pos] = $pos + $size;
-			$maxPos = max($maxPos, $pos + $size);
-		}
+	public function showFragmentationInfoAndDie( ) {
+        uasort($this->keys, function($key1, $key2) {
+            return $key1[0] - $key2[0];
+        });
 
-		$did_something = true;
-		while ($did_something) {
-			$did_something = false;
+        $gaps = 0;
+        $maxPos = 0;
 
-			$keys = array_keys($keysAsc);
-			foreach ($keys as $key) {
-				if (isset($keysAsc[$key])) {
-					$value = $keysAsc[$key];
-					if ( isset( $keysAsc[$value] ) ) {
-						$keysAsc[$key] = $keysAsc[$value];
-						unset( $keysAsc[$value] );
-						$did_something = true;
-					}
-				}
-			}
-		}
+        foreach ($this->keys as list($pos, $size)) {
+            $gaps += $pos - $maxPos;
+            $maxPos = $pos + $size;
+        }
 
-		ksort($keysAsc);
-
-		{
-			$pos = 0;
-			$gaps = 0;
-			foreach ( $keysAsc as $key => $val ) {
-				if ( $key > $pos ) {
-					$gaps += $key - $pos;
-				}
-				$pos = $val;
-			}
-			if ( $pos < $maxPos ) {
-				$gaps += $maxPos - $pos;
-			}
-            if ( $maxPos - $minPos === 0 ) {
-                echo "Cache file is empty\n";
-            } else {
-                echo 'Unused space in cache file: ' . round( $gaps / ( $maxPos - $minPos ) * 100, 2 ) . '% (' . round( $gaps / 1024 ) . ' KB' . ")\n";
-            }
-		}
+        if ( $maxPos === 0 ) {
+            echo "Cache file is empty\n";
+        } else {
+            echo 'Unused space in cache file: ' . round( $gaps / $maxPos * 100, 2 ) . '% (' . round( $gaps / 1024 ) . ' KB' . ")\n";
+        }
+        exit();
 	}
 
 	/////////////
