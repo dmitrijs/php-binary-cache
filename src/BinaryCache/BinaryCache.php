@@ -225,7 +225,7 @@ class BinaryCache {
 	/////////////
 
 	private function padded_to_10_chars( $x ) {
-		return str_pad( $x, 10, "\0" );
+		return str_pad( $x, 10, "_", STR_PAD_LEFT );
 	}
 
 	private function packLong($long) {
@@ -280,8 +280,8 @@ class BinaryCache {
                     continue;
                 }
                 # do same stuff with the $line
-                list( $key, $position, $size, $time ) = explode( ' ', $line );
-                $this->keys[$key] = array( 0 + (int)trim( $position ), 0 + (int)trim( $size ), 0 + $key_position, 0 + (int)trim( $time ) );
+                list( $key, $position, $size, $time ) = explode( " ", $line );
+                $this->keys[$key] = array( 0 + (int)trim( $position, "\0_" ), 0 + (int)trim( $size, "\0_" ), 0 + $key_position, 0 + (int)trim( $time, "\0_" ) );
             }
 		}
 		fclose( $fr );
