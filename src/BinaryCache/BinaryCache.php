@@ -14,12 +14,18 @@ class BinaryCache {
 	private $keys = array(); // sha1(key) -> position
 
     private $compact;
+    private $compressed_data;
     private $data_file;
     private $keys_file;
 
-	public function __construct($cacheName = 'default', $compact = false ) {
+	public function __construct($cacheName = 'default', $compact = false, $compressed_data = null ) {
 		$this->cacheName = $cacheName;
 		$this->compact = $compact;
+		$this->compressed_data = $compressed_data;
+
+        if (is_null($this->compressed_data)) { // backward compatibility
+            $this->compressed_data = $this->compact;
+        }
     }
 
     public function init() {
@@ -64,7 +70,7 @@ class BinaryCache {
 	public function store( $key, $data ) {
         $hash = sha1( $key );
         $data = serialize( $data );
-        if ($this->compact) {
+        if ($this->compressed_data) {
             $data = gzdeflate($data);
         }
 
@@ -151,7 +157,7 @@ class BinaryCache {
         $data = fread( $fr, $size );
         fclose( $fr );
 
-        if ($this->compact) {
+        if ($this->compressed_data) {
             $data = gzinflate($data);
         }
         return unserialize( $data );
